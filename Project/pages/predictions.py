@@ -35,7 +35,7 @@ column1 = dbc.Col(
             id = 'Desc',
             placeholder= 'Enter Description Here...',
             value = 'Enter Full Description Here',
-            style={'width':'100%'},
+            style={'width':'70%'},
             className='mb-5',    
         ),
         dcc.Markdown('''
@@ -51,20 +51,13 @@ column1 = dbc.Col(
             className= 'mb-5',
         ),
         
-        dcc.Markdown('''
-                     #### Backer Count
-                     
-                     Will more than 25 people donate to your campaign?
-                     '''),
-        dcc.Dropdown(
+        dcc.Markdown('#### Number of Backers'),
+        dcc.Input(
             id = 'Backers_count',
-            options =[
-                {'label' : 'Yes', 'value' : '1'},
-                {'label' : 'No', 'value': '0'}
-            ],
-            value='No',
-            className='mb-5',
-            ),
+            type = 'text',
+            placeholder = '10',
+            className = 'mb-5',
+        ),
     ],
     md=4,
 )
@@ -93,27 +86,25 @@ column2 = dbc.Col(
         dcc.Markdown('''
                      #### Duration
                      
-                     Is your campaign going to last 31 days or less?
+                     How many days will your campaign run?
                      '''),
-        dcc.Dropdown(
+        dcc.Input(
             id = 'Duration',
-            options = [
-                {"label": "Yes", "value" : "1"},
-                {'label':'No', 'value':'0'}   
-            ],
-            className='mb-5'
+            type = 'text',
+            placeholder = '5',
+            className = 'mb-5',
         ),
             
         dcc.Markdown('''
-                     #### Goal
+                     #### Goal (USD)
                      '''),
-        dcc.Input(
-            id = 'Goal',
-            type = 'text',
-            placeholder= '0',
+        dcc.Textarea(
+            id= 'Goal',
+            value= '1000',
+            style={'width': '70%', 'height': 30},
             className= 'mb-5'
         ),
-        dbc.Button('Predict My Success!', color='primary')
+        dbc.Button('Predict My Success!', id= 'button', color='primary', n_clicks=0)
     ]
 )
 
@@ -125,3 +116,37 @@ column3 = dbc.Col(
 
 layout = dbc.Row([column1, column2, column3])
 
+@app.callback(
+    Output("pie-chart", "figure"), 
+    [Input("Name", "value"),
+     Input("Keywords", "value"),
+     Input("Desc", "value"),
+     Input("Backers_count", "value"),
+     Input("Country", "value"),
+     Input("Currency", "value"), 
+     Input("Duration", "value"),
+     Input("Goal", "value"),
+     Input("button", 'n_clicks')])
+def predict(name, keywords, desc, backers_count, country, currency, duration, goal,n_clicks):
+        NameLen = len(str(name))
+        keywordsLen = len(str(keywords))
+        descLen = len(str(desc))
+        goalint = int(goal)
+        df = pd.DataFrame(
+            columns=['NameLen', 'keywordsLen', 'descLen', 'backers_count','country', 'currency','duration', 'goal'], 
+            data=[[NameLen, keywordsLen, descLen, backers_count, country, currency, duration, goalint]]
+        )
+        pipeline = load('assets/pipeline.joblib')
+        y_pred = pipeline.predict_proba(df)[0]*100
+        formatd0 = np.round(y_pred, decimals = 2)
+        data = {'one': ['Value1', ['Value2']]}
+        df1 = pd.DataFrame(data, columns= ['one'])
+        fig0 = px.pie(df1, names= ['Succeed', 'Fail'], color_discrete_sequence=px.colors.sequential.RdBu)
+        fig0.update_layout(margin=dict(t=0, b=0, l=10, r=0))
+        df2 = pd.DataFrame(data = formatd0, columns = ['one'])
+        fig = px.pie(df2, values= df2['one'], names=['Succeed', 'Fail'], color_discrete_sequence=px.colors.sequential.RdBu)
+        fig.update_layout(margin=dict(t=0, b=0, l=10, r=0))
+        if n_clicks == 0:
+            return fig0
+        else:
+            return fig

@@ -54,7 +54,7 @@ column1 = dbc.Col(
         dcc.Markdown('''
                      #### Backer Count
                      
-                     Is your backer count greater than 25?
+                     Will more than 25 people donate to your campaign?
                      '''),
         dcc.Dropdown(
             id = 'Backers_count',
